@@ -39,6 +39,10 @@ const CartSchema = new mongoose.Schema({
     type: Number,
     default: 1,
     min: 1
+  },
+  deliveryCharge:{
+    type:Number,
+    required: true
   }
 
 },
