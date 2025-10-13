@@ -2,6 +2,7 @@ const {initializeDatabase} = require("./db/db.connect");
 const NewBook = require("./models/NewBook.model");
 const Address = require("./models/Address.model");
 const Cart = require("./models/Cart.model");
+const Order = require("./models/Order.model");
 const Wishlist = require("./models/Wishlist.model")
 const { generateBookSummary } = require("./helperFunctions/AIHelper");
 const {generateBookCover} = require("./helperFunctions/GenerateBookCoverImage");
@@ -189,23 +190,213 @@ app.get("/books",async(req,res)=>{
 })
 
 // filter book by genre
-
-app.get("/books/:genre",async(req,res)=>{
-  try{
+app.get("/products/genre/:genre", async (req, res) => {
+  try {
     const genre = req.params.genre;
-    const filteredBooks = await NewBook.find({genre:{ $in: [genre] }});
-    console.log(filteredBooks);
 
-    if(filteredBooks.length === 0){
-     return  res.status(404).json({message:`Books with this ${genre} not found!`});
+    const filteredBooks = await NewBook.find({
+      genre: { $regex: new RegExp(`^${genre}$`, "i") }
+    });
+
+    if (filteredBooks.length === 0) {
+      return res.status(404).json({
+        message: `No books found for genre "${genre}".`,
+      });
     }
 
-    res.status(200).json({message:`Books with this ${genre} fetched successfully!`,filteredBooks});
+    res.status(200).json({
+      message: `Books with genre "${genre}" fetched successfully!`,
+      filteredBooks,
+    });
+  } catch (error) {
+    console.error("Error fetching books by genre:", error);
+    res.status(500).json({
+      message: "Failed to fetch books by genre!",
+      error: error.message,
+    });
+  }
+});
+
+
+// filter by rating
+
+app.get("/products/rating/:rating",async(req,res)=>{
+  try{
+    const rate = req.params.rating;
+
+    const bookData = await NewBook.find({rating: rate});
+    console.log(bookData);
+
+    res.status(200).json({message:"Books with different rating fetched successfully!",bookData });
+
 
   }catch(error){
-    res.status(500).json({message:"Failed to fetch data by their genre!",error:error});
+    res.status(500).json({message:"Failed to load book data",error:error});
   }
 })
+
+// filter price
+
+app.get("/products/sort/sort", async (req, res) => {
+  try {
+    const { sort } = req.query;
+
+    // Build sort object
+    let sortOption = {};
+    if (sort === "asc") sortOption.originalPrice = 1;
+    else if (sort === "desc") sortOption.originalPrice = -1;
+
+    const books = await NewBook.find().sort(sortOption);
+
+    res.status(200).json({
+      message: "Books fetched successfully!",
+      count: books.length,
+      books,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch books", error: error.message });
+  }
+});
+
+// checkout api
+
+app.get("/checkout/:addressId",async(req,res)=>{
+  try{
+    const addressId  = req.params.addressId ;
+
+    const response = await Address.findById(addressId);
+    console.log(response);
+
+    const cartItems = await Cart.find();
+
+    const total = cartItems.reduce((sum, item) => sum + item.price, 0);
+    const deliveryCharge = 499;
+    const discount = 1000;
+    const finalAmount = total - discount + deliveryCharge;
+
+
+    res.status(200).json({message:"Redirected to checkout page", checkout: {
+        response,
+        cartItems,
+        priceDetails: { total, discount, deliveryCharge, finalAmount },
+      }});
+
+  }catch(error){
+    res.status(500).json({message:"Failed to checkout with these address",error:error.message});
+  }
+})
+
+
+// delete books
+
+app.post("/books/delete/:id",async(req,res)=>{
+  try{
+    const id = req.params.id;
+    console.log(id);
+
+    const deleteBook = await Cart.deleteOne({_id:id});
+    console.log(deleteBook);
+
+    res.status(200).json({message:"Book removed from cart successfully",deleteBook});
+
+  }catch(error){
+    res.status(500).json({message:"Failed to delete address",error:error.message});
+  }
+})
+
+// update quantity
+app.put("/cart/quantity/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { action } = req.body;
+
+    const book = await Cart.findById(id);
+
+    if (!book) {
+      return res.status(404).json({ message: "Book not found in the cart" });
+    }
+
+    if (action === "increment") {
+      book.quantity += 1;
+    } else if (action === "decrement" && book.quantity > 1) {
+      book.quantity -= 1;
+    }
+
+    await book.save();
+    // Send response back
+    res.status(200).json({ message: "Quantity updated successfully", book });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update quantity", error: error.message });
+  }
+});
+
+app.post("/place-order", async (req, res) => {
+    try {
+        const { shippingAddressId } = req.body;
+
+        if (!shippingAddressId) {
+            return res.status(400).json({ message: "Shipping address ID is required to place the order." });
+        }
+
+
+        const cartItems = await Cart.find();
+        const address = await Address.findById(shippingAddressId);
+
+        if (!cartItems || cartItems.length === 0) {
+            return res.status(400).json({ message: "Cart is empty. Cannot place order." });
+        }
+        if (!address) {
+            return res.status(404).json({ message: "Shipping address not found." });
+        }
+
+
+        const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        const discountApplied = 1000;
+        const deliveryCharge = 499;
+        const finalAmount = subtotal - discountApplied + deliveryCharge;
+
+        const orderItemsSnapshot = cartItems.map(item => ({
+            bookId: item._id,
+            title: item.title,
+            author: item.author,
+            imageUrl: item.imgUrl,
+            price: item.price,
+            quantity: item.quantity,
+        }));
+
+        const newOrder = new Order({
+            orderItems: orderItemsSnapshot,
+            priceDetails: {
+                totalPrice: subtotal,
+                discount: discountApplied,
+                deliveryCharge: deliveryCharge,
+                Total: finalAmount,
+            },
+            shippingAddress: {
+                id: address._id,
+            },
+        });
+
+        const savedOrder = await newOrder.save();
+
+        await Cart.deleteMany({});
+
+        res.status(201).json({
+            message: "Order placed successfully! Proceed to payment.",
+            orderId: savedOrder._id,
+            finalAmount: finalAmount,
+            cartCleared: true
+        });
+
+    } catch (error) {
+        console.error("Error placing order:", error);
+        res.status(500).json({ message: "Failed to place order.", error: error.message });
+    }
+});
+
+
+
 
 
 const PORT = 3000;

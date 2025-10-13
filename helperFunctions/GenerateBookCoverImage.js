@@ -6,7 +6,7 @@ async function generateBookCover(title, author) {
   The design should reflect the theme and mood of the story.`;
 
   const response = await openai.images.generate({
-    model: "gpt-image-1",
+    model: "openai/gpt-oss-20b:free",
     prompt,
     size: "auto",
   });
