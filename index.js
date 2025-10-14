@@ -235,6 +235,45 @@ app.get("/products/rating/:rating",async(req,res)=>{
   }
 })
 
+// get books into wishlist
+
+
+app.get("/books/wishlist",async(req,res)=>{
+  try{
+
+    const wishlistData = await Wishlist.find();
+    console.log(wishlistData);
+
+    if(wishlistData.length === 0){
+      res.status(404).json({message:"No wishlist Data found!"});
+    }
+
+    if(wishlistData){
+      res.status(200).json({message:"Data fetched successfully!",wishlistData});
+    }
+
+  }catch(error){
+    res.status(500).json({message:"Failed to fetch data",error});
+  }
+})
+
+
+// get products by genre
+
+app.get("/products/genreName",async(req,res)=>{
+
+  try{
+    const genre = req.query.genre;
+
+    const response = await NewBook.find({genre : { $in: [genre] } });
+
+    res.status(200).json({ books: response });
+
+  }catch(error){
+    res.status(500).json({message:"Failed to load book data",error:error});
+  }
+})
+
 // filter price
 
 app.get("/products/sort/sort", async (req, res) => {
@@ -257,6 +296,13 @@ app.get("/products/sort/sort", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch books", error: error.message });
   }
 });
+
+// search books --------write the api for search ----------
+
+app.get("/books/search/:bookName",async(req,res)=>{
+
+})
+
 
 // checkout api
 
