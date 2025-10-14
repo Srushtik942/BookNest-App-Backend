@@ -49,6 +49,7 @@ async function addBook(newBook){
 // api for adding books
 app.post("/books",async(req,res)=>{
   try{
+
     const AddNewBook = await addBook(req.body);
     res.status(200).json({message:"Successfully added the new book",AddNewBook});
   }catch(error){
@@ -105,17 +106,8 @@ app.post("/cart",async(req,res)=>{
 });
 
 // add to wishlist
-async function addToWishlist(newWishlistBook) {
-  try {
-    const AddWishlistBook = new Wishlist(newWishlistBook);
-    const savedWishlistBook = await AddWishlistBook.save();
-    return savedWishlistBook;
-  } catch (error) {
-    throw error;
-  }
-}
-
-app.post("/books/wishlist/:id", async (req, res) => {
+// Simplified wishlist endpoint - just returns book data
+app.get("/books/wishlist/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
@@ -125,20 +117,34 @@ app.post("/books/wishlist/:id", async (req, res) => {
       return res.status(404).json({ message: "Book not found!" });
     }
 
-    const bookData =  req.body;
-
-    const wishlistSave = await addToWishlist(bookData);
-
+    // Just return the book data, frontend will handle localStorage
     res.status(200).json({
-      message: "Successfully saved book into wishlist",
-      wishlistSave
+      message: "Book found",
+      book: book
     });
   } catch (error) {
-    res.status(500).json({ message: "Failed to add into wishlist", error });
+    res.status(500).json({ message: "Failed to fetch book", error: error.message });
   }
 });
 
+app.post("/books/wishlist/bulk", async (req, res) => {
+  try {
+    const { bookIds } = req.body;
 
+    if (!bookIds || bookIds.length === 0) {
+      return res.status(200).json({ books: [] });
+    }
+
+    const books = await NewBook.find({ _id: { $in: bookIds } });
+
+    res.status(200).json({
+      message: "Wishlist books fetched",
+      books
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch wishlist books", error: error.message });
+  }
+});
 // get product details
 
 app.get("/products/:id",async(req,res)=>{
@@ -175,7 +181,9 @@ app.get("/products/:id",async(req,res)=>{
 
 app.get("/books",async(req,res)=>{
   try{
+     console.log("Fetching books...");
     const books = await NewBook.find();
+
     console.log(books);
 
     if(books.length === 0){
