@@ -53,7 +53,7 @@ app.post("/books",async(req,res)=>{
     const AddNewBook = await addBook(req.body);
     res.status(200).json({message:"Successfully added the new book",AddNewBook});
   }catch(error){
-    res.status(500).json({message:"Failed to add book data",error: error});
+    res.status(500).json({message:"Failed to add book data",error: error.message});
   }
 })
 
@@ -310,6 +310,25 @@ app.get("/products/sort/sort", async (req, res) => {
 // search books --------write the api for search ----------
 
 app.get("/books/search/:bookName",async(req,res)=>{
+  try{
+    const bookName = req.params.bookName;
+
+    // const result = await NewBook.findOne({title: bookName});
+      const result = await NewBook.find({
+      title: { $regex: bookName, $options: "i" }
+    });
+
+    if(result){
+      res.status(200).json({message:"Book Data found successfully!",result});
+    }
+    else{
+      res.status(404).json({message:"Book not found"});
+    }
+
+  }catch(error){
+    res.status(500).json({message:"Failed to fetch data",error:error.message});
+  }
+
 
 })
 
