@@ -290,7 +290,7 @@ app.get("/products/sort/sort", async (req, res) => {
   try {
     const { sort } = req.query;
 
-    // Build sort object
+    
     let sortOption = {};
     if (sort === "asc") sortOption.originalPrice = 1;
     else if (sort === "desc") sortOption.originalPrice = -1;
