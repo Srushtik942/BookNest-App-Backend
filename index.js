@@ -327,6 +327,7 @@ app.get("/books/search/:bookName",async(req,res)=>{
 
   }catch(error){
     res.status(500).json({message:"Failed to fetch data",error:error.message});
+    console.log(error.message);
   }
 
 
