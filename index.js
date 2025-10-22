@@ -230,9 +230,11 @@ app.get("/products/genre/:genre", async (req, res) => {
 
 app.get("/products/rating/:rating",async(req,res)=>{
   try{
-    const rate = req.params.rating;
+    const rate = parseFloat(req.params.rating);
 
-    const bookData = await NewBook.find({rating: rate});
+    const bookData = await NewBook.find({
+       rating: { $gte: rate - 0.5, $lte: rate + 0.5 },
+    });
     console.log(bookData);
 
     res.status(200).json({message:"Books with different rating fetched successfully!",bookData });
