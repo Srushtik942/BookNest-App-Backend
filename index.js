@@ -145,6 +145,45 @@ app.post("/books/wishlist/bulk", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch wishlist books", error: error.message });
   }
 });
+
+
+// ✅ Multi-genre filtering API
+app.get("/products/genres", async (req, res) => {
+  try {
+    const { genres } = req.query; // e.g., "Fiction,Non-Fiction,Comics"
+
+    if (!genres) {
+      return res.status(400).json({ message: "Genres query parameter is required." });
+    }
+
+    const genreArray = genres.split(","); // ["Fiction", "Non-Fiction", "Comics"]
+
+    const filteredBooks = await NewBook.find({
+      genre: { $in: genreArray },
+    });
+
+    if (filteredBooks.length === 0) {
+      return res.status(404).json({
+        message: `No books found for genres: ${genres}`,
+        filteredBooks: [],
+      });
+    }
+
+    res.status(200).json({
+      message: `Books for genres [${genres}] fetched successfully!`,
+      filteredBooks,
+    });
+  } catch (error) {
+    console.error("Error fetching books by multiple genres:", error);
+    res.status(500).json({
+      message: "Failed to fetch books by multiple genres!",
+      error: error.message,
+    });
+  }
+});
+
+
+
 // get product details
 
 app.get("/products/:id",async(req,res)=>{
@@ -196,6 +235,9 @@ app.get("/books",async(req,res)=>{
     res.status(500).json({message:"Failed to load all books",error: error});
   }
 })
+
+
+
 
 // filter book by genre
 app.get("/products/genre/:genre", async (req, res) => {
@@ -408,40 +450,6 @@ app.put("/cart/quantity/:id", async (req, res) => {
 
 // supposrting multi genres
 
-// ✅ Multi-genre filtering API
-app.get("/products/genres", async (req, res) => {
-  try {
-    const { genres } = req.query; // e.g., "Fiction,Non-Fiction,Comics"
-
-    if (!genres) {
-      return res.status(400).json({ message: "Genres query parameter is required." });
-    }
-
-    const genreArray = genres.split(","); // ["Fiction", "Non-Fiction", "Comics"]
-
-    const filteredBooks = await NewBook.find({
-      genre: { $in: genreArray },
-    });
-
-    if (filteredBooks.length === 0) {
-      return res.status(404).json({
-        message: `No books found for genres: ${genres}`,
-        filteredBooks: [],
-      });
-    }
-
-    res.status(200).json({
-      message: `Books for genres [${genres}] fetched successfully!`,
-      filteredBooks,
-    });
-  } catch (error) {
-    console.error("Error fetching books by multiple genres:", error);
-    res.status(500).json({
-      message: "Failed to fetch books by multiple genres!",
-      error: error.message,
-    });
-  }
-});
 
 
 app.post("/place-order", async (req, res) => {
