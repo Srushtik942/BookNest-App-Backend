@@ -1,8 +1,8 @@
 const OpenAI = require("openai");
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY, // your OpenRouter key
-  baseURL: "https://openrouter.ai/api/v1", // tell it to use OpenRouter
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: "https://openrouter.ai/api/v1",
 });
 
 async function generateBookSummary(title, author) {
@@ -16,8 +16,8 @@ async function generateBookSummary(title, author) {
     ],
     temperature: 0.7,
     extra_headers: {
-      "HTTP-Referer": "https://your-site-url.com", // optional (for OpenRouter ranking)
-      "X-Title": "KitabKart AI Summary", // optional
+      "HTTP-Referer": "https://your-site-url.com",
+      "X-Title": "KitabKart AI Summary", 
     },
   });
 
