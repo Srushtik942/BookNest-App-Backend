@@ -237,7 +237,7 @@ app.get("/books",async(req,res)=>{
 })
 
 // product details
-app.get("/productsDetails/:id",async(req,res)=>{
+app.get("/newProductDetails/:id",async(req,res)=>{
   try{
     const id = req.params.id;
     const book = await NewBook.findOne({_id:id});
