@@ -236,6 +236,22 @@ app.get("/books",async(req,res)=>{
   }
 })
 
+// product details
+app.get("/productDetails/:id",async(req,res)=>{
+  try{
+    const id = req.params.id;
+    const book = await NewBook.findOne({_id:id});
+    console.log(book);
+
+    if(book){
+      res.status(200).json({message:"Book Details found successully!",book});
+    }
+
+    res.status(404).json({message:"No books found!"});
+  }catch(error){
+    res.status(500).json({message:"Failed to fetch book details",error:error});
+  }
+})
 
 
 
