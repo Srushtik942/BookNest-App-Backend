@@ -246,8 +246,9 @@ app.get("/productDetails/:id",async(req,res)=>{
     if(book){
       res.status(200).json({message:"Book Details found successully!",book});
     }
-
+   else{
     res.status(404).json({message:"No books found!"});
+   }
   }catch(error){
     res.status(500).json({message:"Failed to fetch book details",error:error});
   }
